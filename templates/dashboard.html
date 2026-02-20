@@ -53,7 +53,7 @@
       </tr>
       {% if current_user.role in ['superadmin', 'admin'] %}
       <th></th>
-      {% endif %}
+       {% endif %}
     </thead>
     <tbody>
       {% for ticket in recent_tickets %}
@@ -72,11 +72,12 @@
         <td>
           {% if current_user.role in ['superadmin', 'admin'] %}
           <form method="POST" action="{{ url_for('ticket_delete', ticket_id=ticket.id) }}"
-           onsubmit="return confirm('¿Eliminar ticket #{{ ticket.id }}? Esta acción no se puede deshacer.')">
-          <button type="submit" class="btn btn-sm btn-danger">
-            <i class="bi bi-trash"></i>
-          </button>
-        </form>
+             onclick="event.stopPropagation()"
+             onsubmit="event.stopPropagation(); return confirm('¿Eliminar ticket #{{ ticket.id }}? Esta acción no se puede deshacer.')">
+            <button type="submit" class="btn btn-sm btn-danger">
+               <i class="bi bi-trash"></i>
+            </button>
+          </form>
          {% endif %}
         </td>
       </tr>

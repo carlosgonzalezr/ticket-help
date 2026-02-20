@@ -318,6 +318,21 @@ def ticket_comment(ticket_id):
     db.session.commit()
     flash("Comentario agregado.", "success")
     return redirect(url_for("ticket_detail", ticket_id=ticket_id))
+#--------agregue  ruta de eliminacion----------------------
+@app.route("/tickets/<int:ticket_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def ticket_delete(ticket_id):
+    ticket = db.session.get(Ticket, ticket_id)
+    if not ticket:
+        abort(404)
+    # Admin solo puede eliminar tickets de su grupo
+    if not current_user.is_superadmin() and ticket.group_id != current_user.group_id:
+        abort(403)
+    db.session.delete(ticket)
+    db.session.commit()
+    flash(f"Ticket #{ticket_id} eliminado.", "success")
+    return redirect(url_for("dashboard"))
 
 
 # ─── Rutas de Administración ──────────────────────────────────────────────────
@@ -328,9 +343,62 @@ def admin_users():
     """Superadmin ve todos; Admin de grupo ve solo los de su grupo."""
     if current_user.is_superadmin():
         users = User.query.all()
+        groups = Group.query.all()
     else:
         users = User.query.filter_by(group_id=current_user.group_id).all()
-    return render_template("admin/users.html", users=users)
+        groups = [current_user.group]
+    return render_template("admin/users.html", users=users, groups=groups)
+
+
+@app.route("/admin/users/create", methods=["POST"])
+@login_required
+@admin_required
+def admin_user_create():
+    name     = request.form.get("name", "").strip()
+    email    = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "").strip()
+    role     = request.form.get("role", Role.SOLICITANTE)
+    group_id = request.form.get("group_id", type=int)
+
+    if not name or not email or not password:
+        flash("Nombre, email y contraseña son obligatorios.", "warning")
+        return redirect(url_for("admin_users"))
+
+    if User.query.filter_by(email=email).first():
+        flash("Ya existe un usuario con ese correo.", "danger")
+        return redirect(url_for("admin_users"))
+
+    # Admin solo puede crear usuarios en su propio grupo
+    if not current_user.is_superadmin():
+        group_id = current_user.group_id
+        # Admin no puede crear superadmin ni admin
+        if role in (Role.SUPERADMIN, Role.ADMIN):
+            role = Role.RESOLUTOR
+
+    user = User(name=name, email=email, role=role, group_id=group_id)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    flash(f"Usuario {name} creado correctamente.", "success")
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/users/<int:user_id>/toggle", methods=["POST"])
+@login_required
+@admin_required
+def admin_user_toggle(user_id):
+    """Activar o desactivar un usuario."""
+    user = db.session.get(User, user_id)
+    if not user or user.id == current_user.id:
+        abort(404)
+    # Admin solo puede gestionar usuarios de su grupo
+    if not current_user.is_superadmin() and user.group_id != current_user.group_id:
+        abort(403)
+    user.is_active = not user.is_active
+    db.session.commit()
+    estado = "activado" if user.is_active else "desactivado"
+    flash(f"Usuario {user.name} {estado}.", "success")
+    return redirect(url_for("admin_users"))
 
 
 @app.route("/admin/groups")

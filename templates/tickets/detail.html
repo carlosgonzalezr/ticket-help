@@ -104,7 +104,7 @@
           <div class="form-mb">
             <label class="form-label">Prioridad</label>
             <select name="priority" class="form-select">
-              {% for val, lbl in [('low','Baja'),('medium','Media'),('high,'Alta'),('urgent','Urgente')] %}
+              {% for val, lbl in [('low','Baja'),('medium','Media'),('high','Alta'),('urgent','Urgente')] %}
               <option value="{{ val }}" {% if ticket.priority==val %}selected{% endif %}>{{ lbl }}</option>
               {% endfor %}
             </select>

@@ -3,16 +3,28 @@
 {% block page_title %}Usuarios{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1 class="page-title">Gestión de Usuarios</h1>
-  <p class="page-subtitle">Administra los usuarios del sistema.</p>
+<div class="flex-between mb-4">
+  <div class="page-header" style="margin-bottom:0">
+    <h1 class="page-title">Gestión de Usuarios</h1>
+    <p class="page-subtitle">Administra los usuarios del sistema.</p>
+  </div>
+  <button onclick="document.getElementById('modal-crear').style.display='flex'" class="btn btn-primary btn-sm">
+    <i class="bi bi-person-plus"></i> Nuevo Usuario
+  </button>
 </div>
 
+<!-- Tabla de usuarios -->
 <div class="card">
   <table class="tickets-table">
     <thead>
       <tr>
-        <th>#</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Grupo</th><th>Estado</th>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Grupo</th>
+        <th>Estado</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -41,9 +53,88 @@
           <span class="badge badge-closed">Inactivo</span>
           {% endif %}
         </td>
+        <td>
+          {% if user.id != current_user.id %}
+          <form method="POST" action="{{ url_for('admin_user_toggle', user_id=user.id) }}" style="display:inline">
+            <button type="submit" class="btn btn-sm {% if user.is_active %}btn-danger{% else %}btn-success{% endif %}">
+              {% if user.is_active %}
+              <i class="bi bi-person-x"></i> Desactivar
+              {% else %}
+              <i class="bi bi-person-check"></i> Activar
+              {% endif %}
+            </button>
+          </form>
+          {% else %}
+          <span class="text-sm text-muted">— tú —</span>
+          {% endif %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+
+<!-- MODAL: Crear usuario -->
+<div id="modal-crear" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border:1px solid var(--border-light);border-radius:14px;padding:32px;width:100%;max-width:460px;position:relative">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h3 style="font-size:17px;font-weight:700">Crear nuevo usuario</h3>
+      <span onclick="document.getElementById('modal-crear').style.display='none'"
+        style="cursor:pointer;color:var(--text-muted);font-size:22px;line-height:1">&times;</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin_user_create') }}">
+
+      <div class="form-mb">
+        <label class="form-label">Nombre completo <span style="color:var(--accent-red)">*</span></label>
+        <input type="text" name="name" class="form-control" placeholder="Ej: Juan Pérez" required>
+      </div>
+
+      <div class="form-mb">
+        <label class="form-label">Correo electrónico <span style="color:var(--accent-red)">*</span></label>
+        <input type="email" name="email" class="form-control" placeholder="juan@empresa.com" required>
+      </div>
+
+      <div class="form-mb">
+        <label class="form-label">Contraseña <span style="color:var(--accent-red)">*</span></label>
+        <input type="password" name="password" class="form-control" placeholder="Mínimo 6 caracteres" required minlength="6">
+      </div>
+
+      <div class="form-mb">
+        <label class="form-label">Rol</label>
+        <select name="role" class="form-select">
+          {% if current_user.role == 'superadmin' %}
+          <option value="superadmin">Superadmin</option>
+          <option value="admin">Admin</option>
+          {% endif %}
+          <option value="resolutor">Resolutor</option>
+          <option value="solicitante" selected>Solicitante</option>
+        </select>
+      </div>
+
+      {% if current_user.role == 'superadmin' %}
+      <div class="form-mb">
+        <label class="form-label">Grupo</label>
+        <select name="group_id" class="form-select">
+          <option value="">Sin grupo</option>
+          {% for group in groups %}
+          <option value="{{ group.id }}">{{ group.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div style="display:flex;gap:10px;margin-top:24px">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-person-plus"></i> Crear usuario
+        </button>
+        <button type="button" onclick="document.getElementById('modal-crear').style.display='none'" class="btn btn-secondary">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 {% endblock %}

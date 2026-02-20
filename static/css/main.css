@@ -364,3 +364,105 @@ textarea.form-control { resize: vertical; min-height: 100px; }
 .mb-4 { margin-bottom: 28px; }
 .text-muted { color: var(--text-muted); }
 .text-sm { font-size: 12px; }
+
+/* ── FILTER DROPDOWNS ── */
+.fdd {
+  position: relative;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .18s;
+  white-space: nowrap;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.filter-count {
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+}
+
+.fdd-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 6px 4px;
+  min-width: 190px;
+  z-index: 999;
+  box-shadow: 0 8px 28px rgba(0,0,0,.5);
+}
+
+.fdd-panel.open {
+  display: block;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background .15s;
+  user-select: none;
+}
+
+.filter-option:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.filter-option input[type="checkbox"] {
+  accent-color: var(--accent-blue);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── BTN TRASH ── */
+.btn-trash {
+  background: transparent;
+  border: 1px solid rgba(255,82,82,.25);
+  border-radius: 6px;
+  color: var(--text-muted);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .2s;
+  font-size: 13px;
+}
+
+.btn-trash:hover {
+  background: rgba(255,82,82,.15);
+  color: #ff5252;
+  border-color: rgba(255,82,82,.5);
+}

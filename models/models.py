@@ -3,7 +3,7 @@ models.py — Definición de tablas con SQLAlchemy
 Tablas: Users, Groups, Tickets, Comments
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 
@@ -123,6 +123,8 @@ class Ticket(db.Model):
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at  = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     closed_at   = db.Column(db.DateTime, nullable=True)
+    due_date    = db.Column(db.DateTime, nullable=True)   # Fecha de vencimiento
+    area        = db.Column(db.String(150), nullable=True) # Área específica del ticket
 
     # FK: grupo al que pertenece el ticket (AISLAMIENTO CLAVE)
     group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=False)

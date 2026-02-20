@@ -49,37 +49,52 @@
         {% if current_user.role == 'superadmin' %}<th>Grupo</th>{% endif %}
         <th>Prioridad</th>
         <th>Estado</th>
+        <th>Vencimiento</th>
         <th>Fecha</th>
+        {% if current_user.role in ['superadmin','admin'] %}<th></th>{% endif %}
       </tr>
-      {% if current_user.role in ['superadmin', 'admin'] %}
-      <th></th>
-       {% endif %}
     </thead>
     <tbody>
       {% for ticket in recent_tickets %}
+      {% set prio_labels = {'low':'Baja','medium':'Media','high':'Alta','urgent':'Urgente'} %}
+      {% set labels = {'open':'Pendiente','in_progress':'En Progreso','resolved':'Resuelto','closed':'Cerrado'} %}
       <tr onclick="location.href='{{ url_for('ticket_detail', ticket_id=ticket.id) }}'">
         <td><span class="ticket-id">TKT-{{ '%03d' % ticket.id }}</span></td>
         <td class="ticket-title-cell">{{ ticket.title }}</td>
         {% if current_user.role == 'superadmin' %}
         <td><span class="badge badge-group">{{ ticket.group.name }}</span></td>
         {% endif %}
-        <td><span class="badge badge-{{ ticket.priority }}">{{ ticket.priority | title }}</span></td>
+        <td><span class="badge badge-{{ ticket.priority }}">{{ prio_labels.get(ticket.priority, ticket.priority) }}</span></td>
+        <td><span class="badge badge-{{ ticket.status }}">{{ labels.get(ticket.status, ticket.status) }}</span></td>
         <td>
-          {% set labels = {'open':'Pendiente','in_progress':'En Progreso','resolved':'Resuelto','closed':'Cerrado'} %}
-          <span class="badge badge-{{ ticket.status }}">{{ labels.get(ticket.status, ticket.status) }}</span>
+          {% if ticket.due_date %}
+            {% set hoy = ticket.created_at %}
+            {% set diff = (ticket.due_date - ticket.created_at).days %}
+            <span style="font-size:12px;font-family:'JetBrains Mono',monospace;
+              color:{% if ticket.status not in ['resolved','closed'] %}
+                {% if diff <= 1 %}var(--accent-red)
+                {% elif diff <= 2 %}var(--accent-yellow)
+                {% else %}var(--text-secondary){% endif %}
+              {% else %}var(--text-muted){% endif %}">
+              <i class="bi bi-calendar-event" style="margin-right:4px"></i>
+              {{ ticket.due_date.strftime('%d %b %Y') }}
+            </span>
+          {% else %}
+            <span class="text-muted text-sm">—</span>
+          {% endif %}
         </td>
         <td class="text-sm text-muted">{{ ticket.created_at.strftime('%d %b %Y') }}</td>
+        {% if current_user.role in ['superadmin','admin'] %}
         <td>
-          {% if current_user.role in ['superadmin', 'admin'] %}
           <form method="POST" action="{{ url_for('ticket_delete', ticket_id=ticket.id) }}"
-             onclick="event.stopPropagation()"
-             onsubmit="event.stopPropagation(); return confirm('¿Eliminar ticket #{{ ticket.id }}? Esta acción no se puede deshacer.')">
-            <button type="submit" class="btn btn-sm btn-danger">
-               <i class="bi bi-trash"></i>
+            onclick="event.stopPropagation()"
+            onsubmit="event.stopPropagation(); return confirm('¿Eliminar ticket #{{ ticket.id }}?')">
+            <button type="submit" class="btn-trash">
+              <i class="bi bi-trash3"></i>
             </button>
           </form>
-         {% endif %}
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>

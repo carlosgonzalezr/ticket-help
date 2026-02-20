@@ -162,28 +162,35 @@ def logout():
 @app.route("/tickets")
 @login_required
 def tickets_list():
-    """
-    Lista de tickets FILTRADA según el rol y grupo del usuario.
-    Demostración del aislamiento por group_id.
-    """
-    status_filter   = request.args.get("status",   "")
-    priority_filter = request.args.get("priority", "")
+    status_filter   = request.args.getlist("status")
+    priority_filter = request.args.getlist("priority")
+    assigned_filter = request.args.getlist("assigned")
 
     tickets = get_tickets_for_current_user()
 
-    # Filtros opcionales adicionales (sobre los ya aislados por grupo)
     if status_filter:
-        tickets = [t for t in tickets if t.status == status_filter]
+        tickets = [t for t in tickets if t.status in status_filter]
     if priority_filter:
-        tickets = [t for t in tickets if t.priority == priority_filter]
+        tickets = [t for t in tickets if t.priority in priority_filter]
+    if assigned_filter:
+        tickets = [t for t in tickets if str(t.assigned_to_id) in assigned_filter]
+
+    # Usuarios disponibles para filtro de asignados
+    if current_user.is_superadmin():
+        assignees = User.query.filter(User.role.in_(['admin','resolutor'])).all()
+    else:
+        assignees = User.query.filter(
+            User.group_id == current_user.group_id,
+            User.role.in_(['admin','resolutor'])
+        ).all()
 
     return render_template(
         "tickets/list.html",
         tickets=tickets,
-        statuses=vars(TicketStatus),
-        priorities=vars(TicketPriority),
+        assignees=assignees,
         current_status=status_filter,
         current_priority=priority_filter,
+        current_assigned=assigned_filter,
     )
 
 
@@ -215,6 +222,12 @@ def ticket_create():
             flash("No tienes un grupo asignado.", "danger")
             return render_template("tickets/create.html", groups=groups)
 
+        from datetime import datetime, timedelta
+
+        plazos = {'low': 7, 'medium': 4, 'high': 2, 'urgent': 1}
+        due_date = datetime.utcnow() + timedelta(days=plazos.get(priority, 4))
+        area = request.form.get("area", "").strip()
+
         ticket = Ticket(
             title=title,
             description=description,
@@ -222,6 +235,8 @@ def ticket_create():
             group_id=group_id,
             created_by_id=current_user.id,
             source="web",
+            due_date=due_date,
+            area=area or None,
         )
         db.session.add(ticket)
         db.session.commit()

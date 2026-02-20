@@ -14,28 +14,74 @@
       {% endif %}
     </h1>
   </div>
-  <a href="{{ url_for('ticket_create') }}" class="btn btn-primary btn-sm">
+  <a href="{{ url_for('ticket_create') }}" class="btn btn-primary btn-lg">
     <i class="bi bi-plus-lg"></i> Nuevo Ticket
   </a>
 </div>
 
 <!-- Filtros -->
-<div class="filters-bar">
-  <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap">
-    <select name="status" class="form-select" onchange="this.form.submit()">
-      <option value="">Todos los estados</option>
-      <option value="open"        {% if current_status=='open' %}selected{% endif %}>Pendiente</option>
-      <option value="in_progress" {% if current_status=='in_progress' %}selected{% endif %}>En Progreso</option>
-      <option value="resolved"    {% if current_status=='resolved' %}selected{% endif %}>Resuelto</option>
-      <option value="closed"      {% if current_status=='closed' %}selected{% endif %}>Cerrado</option>
-    </select>
-    <select name="priority" class="form-select" onchange="this.form.submit()">
-      <option value="">Todas las prioridades</option>
-      <option value="low"    {% if current_priority=='low' %}selected{% endif %}>Baja</option>
-      <option value="medium" {% if current_priority=='medium' %}selected{% endif %}>Media</option>
-      <option value="high"   {% if current_priority=='high' %}selected{% endif %}>Alta</option>
-      <option value="urgent" {% if current_priority=='urgent' %}selected{% endif %}>Urgente</option>
-    </select>
+<div class="card mb-3" style="padding:12px 16px;overflow:visible">
+  <form method="GET" id="filter-form">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <i class="bi bi-funnel" style="color:var(--accent-blue);font-size:16px"></i>
+
+      <!-- Estado -->
+      <div class="fdd">
+        <button class="filter-btn" type="button" onclick="toggleFdd(this)">
+          Estado
+          {% if current_status|length > 0 %}<span class="filter-count">{{ current_status|length }}</span>{% endif %}
+          <i class="bi bi-chevron-down" style="font-size:10px;margin-left:2px"></i>
+        </button>
+        <div class="fdd-panel">
+          {% for val, lbl in [('open','Pendiente'),('in_progress','En Progreso'),('resolved','Resuelto'),('closed','Cerrado')] %}
+          <label class="filter-option">
+            <input type="checkbox" name="status" value="{{ val }}" {% if val in current_status %}checked{% endif %}>{{ lbl }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Prioridad -->
+      <div class="fdd">
+        <button class="filter-btn" type="button" onclick="toggleFdd(this)">
+          Prioridad
+          {% if current_priority|length > 0 %}<span class="filter-count">{{ current_priority|length }}</span>{% endif %}
+          <i class="bi bi-chevron-down" style="font-size:10px;margin-left:2px"></i>
+        </button>
+        <div class="fdd-panel">
+          {% for val, lbl in [('low','Baja'),('medium','Media'),('high','Alta'),('urgent','Urgente')] %}
+          <label class="filter-option">
+            <input type="checkbox" name="priority" value="{{ val }}" {% if val in current_priority %}checked{% endif %}>{{ lbl }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Asignado -->
+      {% if assignees %}
+      <div class="fdd">
+        <button class="filter-btn" type="button" onclick="toggleFdd(this)">
+          Asignado a
+          {% if current_assigned|length > 0 %}<span class="filter-count">{{ current_assigned|length }}</span>{% endif %}
+          <i class="bi bi-chevron-down" style="font-size:10px;margin-left:2px"></i>
+        </button>
+        <div class="fdd-panel">
+          {% for user in assignees %}
+          <label class="filter-option">
+            <input type="checkbox" name="assigned" value="{{ user.id }}" {% if user.id|string in current_assigned %}checked{% endif %}>{{ user.name }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="bi bi-check-lg"></i> Aplicar
+      </button>
+      <a href="{{ url_for('tickets_list') }}" class="btn btn-secondary btn-sm" style="padding:6px 11px" title="Limpiar">
+        <i class="bi bi-x-lg"></i>
+      </a>
+    </div>
   </form>
 </div>
 
@@ -47,34 +93,38 @@
       <tr>
         <th>#ID</th>
         <th>Asunto</th>
+        <th>Área</th>
         {% if current_user.role == 'superadmin' %}<th>Grupo</th>{% endif %}
         <th>Prioridad</th>
         <th>Estado</th>
         <th>Asignado</th>
-        <th>Origen</th>
+        <th>Vencimiento</th>
         <th>Fecha</th>
       </tr>
     </thead>
     <tbody>
       {% for ticket in tickets %}
       {% set labels = {'open':'Pendiente','in_progress':'En Progreso','resolved':'Resuelto','closed':'Cerrado'} %}
+      {% set prio_labels = {'low':'Baja','medium':'Media','high':'Alta','urgent':'Urgente'} %}
       <tr onclick="location.href='{{ url_for('ticket_detail', ticket_id=ticket.id) }}'">
         <td><span class="ticket-id">TKT-{{ '%03d' % ticket.id }}</span></td>
         <td class="ticket-title-cell">{{ ticket.title }}</td>
+        <td style="font-size:13px;color:var(--text-secondary)">{{ ticket.area if ticket.area else '—' }}</td>
         {% if current_user.role == 'superadmin' %}
         <td><span class="badge badge-group">{{ ticket.group.name }}</span></td>
         {% endif %}
-        <td><span class="badge badge-{{ ticket.priority }}">{{ ticket.priority | title }}</span></td>
+        <td><span class="badge badge-{{ ticket.priority }}">{{ prio_labels.get(ticket.priority, ticket.priority) }}</span></td>
         <td><span class="badge badge-{{ ticket.status }}">{{ labels.get(ticket.status, ticket.status) }}</span></td>
-        <td class="text-sm text-muted">{{ ticket.assignee.name if ticket.assignee else '—' }}</td>
+        <td style="font-size:13px;color:var(--text-muted)">{{ ticket.assignee.name if ticket.assignee else '—' }}</td>
         <td>
-          {% if ticket.source == 'email' %}
-            <span class="badge badge-group"><i class="bi bi-envelope"></i></span>
-          {% else %}
-            <span style="color:var(--text-muted);font-size:13px"><i class="bi bi-globe"></i></span>
-          {% endif %}
+          {% if ticket.due_date %}
+            {% set diff = (ticket.due_date - ticket.created_at).days %}
+            <span style="font-size:12px;font-family:'JetBrains Mono',monospace;color:{% if ticket.status not in ['resolved','closed'] %}{% if diff <= 1 %}var(--accent-red){% elif diff <= 2 %}var(--accent-yellow){% else %}var(--text-secondary){% endif %}{% else %}var(--text-muted){% endif %}">
+              <i class="bi bi-calendar-event" style="margin-right:3px"></i>{{ ticket.due_date.strftime('%d %b %Y') }}
+            </span>
+          {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
         </td>
-        <td class="text-sm text-muted">{{ ticket.created_at.strftime('%d %b %Y') }}</td>
+        <td style="font-size:13px;color:var(--text-muted)">{{ ticket.created_at.strftime('%d %b %Y') }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -83,10 +133,22 @@
   <div class="empty-state">
     <div class="empty-icon"><i class="bi bi-inbox"></i></div>
     <p>No se encontraron tickets con esos filtros.</p>
-    <a href="{{ url_for('ticket_create') }}" class="btn btn-primary btn-sm">
-      <i class="bi bi-plus-lg"></i> Crear ticket
-    </a>
+    <a href="{{ url_for('ticket_create') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Crear ticket</a>
   </div>
   {% endif %}
 </div>
+
+<script>
+function toggleFdd(btn) {
+  const panel = btn.nextElementSibling;
+  const isOpen = panel.classList.contains('open');
+  document.querySelectorAll('.fdd-panel.open').forEach(p => p.classList.remove('open'));
+  if (!isOpen) panel.classList.add('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.fdd')) {
+    document.querySelectorAll('.fdd-panel.open').forEach(p => p.classList.remove('open'));
+  }
+});
+</script>
 {% endblock %}

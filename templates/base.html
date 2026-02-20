@@ -7,12 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Bootstrap JS solamente (sin el CSS de Bootstrap para no romper nuestros estilos) -->
   <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
 </head>
 <body>
 
 {% if current_user.is_authenticated %}
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-icon">TD</div>
@@ -25,8 +25,6 @@
     </a>
     <a href="{{ url_for('tickets_list') }}" class="nav-item {% if request.endpoint in ['tickets_list','ticket_detail'] %}active{% endif %}">
       <i class="bi bi-ticket-perforated nav-icon"></i> Mis Tickets
-      {% set open_count = current_user.tickets_created.filter_by(status='open').count() if current_user.role == 'solicitante' else '' %}
-      {% if open_count %}<span class="nav-badge">{{ open_count }}</span>{% endif %}
     </a>
     <a href="{{ url_for('ticket_create') }}" class="nav-item {% if request.endpoint == 'ticket_create' %}active{% endif %}">
       <i class="bi bi-plus-circle nav-icon"></i> Nuevo Ticket
@@ -60,17 +58,15 @@
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main-wrapper">
   <header class="topbar">
     <span class="topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
     <div class="topbar-actions">
-      <div class="topbar-icon-btn" title="Notificaciones"><i class="bi bi-bell"></i></div>
-      <div class="topbar-icon-btn" title="Configuración"><i class="bi bi-gear"></i></div>
+      <div class="topbar-icon-btn"><i class="bi bi-bell"></i></div>
+      <div class="topbar-icon-btn"><i class="bi bi-gear"></i></div>
     </div>
   </header>
 
-  <!-- Flash messages -->
   <div class="flash-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
@@ -92,6 +88,8 @@
   {% block auth_content %}{% endblock %}
 {% endif %}
 
+<!-- Solo el JS de Bootstrap para los dropdowns -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

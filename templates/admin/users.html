@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Usuarios — Ticket Help{% endblock %}
+{% block page_title %}Usuarios{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Gestión de Usuarios</h1>
+  <p class="page-subtitle">Administra los usuarios del sistema.</p>
+</div>
+
+<div class="card">
+  <table class="tickets-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Grupo</th><th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td class="text-sm text-muted">{{ user.id }}</td>
+        <td style="font-weight:500;color:var(--text-primary)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">
+              {{ user.name[:2].upper() }}
+            </div>
+            {{ user.name }}
+          </div>
+        </td>
+        <td class="text-sm text-muted">{{ user.email }}</td>
+        <td><span class="badge badge-role">{{ user.role | title }}</span></td>
+        <td>
+          {% if user.group %}
+          <span class="badge badge-group">{{ user.group.name }}</span>
+          {% else %}<span class="text-muted text-sm">—</span>{% endif %}
+        </td>
+        <td>
+          {% if user.is_active %}
+          <span class="badge badge-resolved">Activo</span>
+          {% else %}
+          <span class="badge badge-closed">Inactivo</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

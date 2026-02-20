@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Ticket #{{ ticket.id }} — Ticket Help{% endblock %}
+{% block page_title %}Ticket TKT-{{ '%03d' % ticket.id }}{% endblock %}
+
+{% block content %}
+{% set labels = {'open':'Pendiente','in_progress':'En Progreso','resolved':'Resuelto','closed':'Cerrado'} %}
+
+<div style="margin-bottom:16px">
+  <a href="{{ url_for('tickets_list') }}" style="color:var(--text-muted);font-size:13px;display:inline-flex;align-items:center;gap:6px">
+    <i class="bi bi-arrow-left"></i> Volver a tickets
+  </a>
+</div>
+
+<div class="detail-grid">
+  <!-- Columna principal -->
+  <div>
+    <div class="card mb-3">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="ticket-id">TKT-{{ '%03d' % ticket.id }}</span>
+          <span class="badge badge-group">{{ ticket.group.name }}</span>
+          {% if ticket.source == 'email' %}
+          <span class="badge badge-group"><i class="bi bi-envelope me-1"></i>Email</span>
+          {% endif %}
+        </div>
+        <div style="display:flex;gap:6px">
+          <span class="badge badge-{{ ticket.priority }}">{{ ticket.priority | title }}</span>
+          <span class="badge badge-{{ ticket.status }}">{{ labels.get(ticket.status) }}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:8px">{{ ticket.title }}</h2>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">
+          Creado por <strong style="color:var(--text-secondary)">{{ ticket.creator.name }}</strong>
+          · {{ ticket.created_at.strftime('%d %b %Y, %H:%M') }}
+        </p>
+        <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:16px;font-size:14px;color:var(--text-secondary);line-height:1.6;white-space:pre-wrap">{{ ticket.description }}</div>
+      </div>
+    </div>
+
+    <!-- Comentarios -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="bi bi-chat-dots" style="margin-right:8px"></i>Actividad</span>
+      </div>
+      <div class="card-body">
+        {% if comments %}
+          {% for comment in comments %}
+          <div class="comment-item {% if comment.is_internal %}internal{% endif %}">
+            <div class="comment-meta">
+              <span class="comment-author">{{ comment.author.name }}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                {% if comment.is_internal %}
+                <span class="badge badge-internal" style="font-size:10px">Nota interna</span>
+                {% endif %}
+                <span class="comment-date">{{ comment.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+              </div>
+            </div>
+            <div class="comment-body">{{ comment.body }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px 0">Sin actividad aún.</p>
+        {% endif %}
+
+        <!-- Formulario comentario -->
+        <form method="POST" action="{{ url_for('ticket_comment', ticket_id=ticket.id) }}" style="margin-top:16px">
+          <div class="form-mb">
+            <textarea name="body" class="form-control" rows="3" placeholder="Escribe un comentario…" required></textarea>
+          </div>
+          {% if can_resolve %}
+          <div style="margin-bottom:12px">
+            <label class="form-check">
+              <input type="checkbox" name="is_internal" class="form-check-input">
+              <span class="form-check-label">Nota interna (no visible al solicitante)</span>
+            </label>
+          </div>
+          {% endif %}
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-send"></i> Comentar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar gestión -->
+  {% if can_resolve %}
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Gestión</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('ticket_update', ticket_id=ticket.id) }}">
+          <div class="form-mb">
+            <label class="form-label">Estado</label>
+            <select name="status" class="form-select">
+              {% for val, lbl in [('open','Pendiente'),('in_progress','En Progreso'),('resolved','Resuelto'),('closed','Cerrado')] %}
+              <option value="{{ val }}" {% if ticket.status==val %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-mb">
+            <label class="form-label">Prioridad</label>
+            <select name="priority" class="form-select">
+              {% for val, lbl in [('low','Baja'),('medium','Media'),('high,'Alta'),('urgent','Urgente')] %}
+              <option value="{{ val }}" {% if ticket.priority==val %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% if resolvers %}
+          <div class="form-mb">
+            <label class="form-label">Asignar a</label>
+            <select name="assigned_to_id" class="form-select">
+              <option value="">Sin asignar</option>
+              {% for user in resolvers %}
+              <option value="{{ user.id }}" {% if ticket.assigned_to_id==user.id %}selected{% endif %}>{{ user.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
+          <button type="submit" class="btn btn-success btn-full">
+            <i class="bi bi-check-lg"></i> Guardar cambios
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Info del ticket -->
+    <div class="card mt-2" style="margin-top:14px">
+      <div class="card-body" style="font-size:13px">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-muted)">Solicitante</span>
+          <span>{{ ticket.creator.name }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-muted)">Asignado</span>
+          <span>{{ ticket.assignee.name if ticket.assignee else '—' }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--text-muted)">Grupo</span>
+          <span class="badge badge-group">{{ ticket.group.name }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0">
+          <span style="color:var(--text-muted)">Origen</span>
+          <span>{{ 'Email' if ticket.source == 'email' else 'Web' }}</span>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

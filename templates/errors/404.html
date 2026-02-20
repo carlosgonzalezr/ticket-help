@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}404 — No encontrado{% endblock %}
+{% block page_title %}Error 404{% endblock %}
+{% block content %}
+<div class="error-page">
+  <div class="error-code">404</div>
+  <div class="error-msg">Página no encontrada</div>
+  <div class="error-sub">El recurso que buscas no existe o no tienes acceso.</div>
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+    <i class="bi bi-house"></i> Volver al inicio
+  </a>
+</div>
+{% endblock %}

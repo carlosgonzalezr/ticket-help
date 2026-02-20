@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Ticket Help{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Bienvenido de vuelta 👋</h1>
+  <p class="page-subtitle">Aquí tienes el resumen del sistema de tickets.</p>
+</div>
+
+<!-- Métricas -->
+<div class="metrics-grid">
+  <div class="metric-card blue">
+    <div class="metric-icon"><i class="bi bi-ticket-perforated"></i></div>
+    <div class="metric-value">{{ stats.total }}</div>
+    <div class="metric-label">Total Tickets</div>
+  </div>
+  <div class="metric-card yellow">
+    <div class="metric-icon"><i class="bi bi-hourglass-split"></i></div>
+    <div class="metric-value">{{ stats.open }}</div>
+    <div class="metric-label">Pendientes</div>
+  </div>
+  <div class="metric-card purple">
+    <div class="metric-icon"><i class="bi bi-arrow-repeat"></i></div>
+    <div class="metric-value">{{ stats.in_progress }}</div>
+    <div class="metric-label">En Progreso</div>
+  </div>
+  <div class="metric-card green">
+    <div class="metric-icon"><i class="bi bi-check-circle"></i></div>
+    <div class="metric-value">{{ stats.resolved }}</div>
+    <div class="metric-label">Resueltos</div>
+  </div>
+</div>
+
+<!-- Tickets recientes -->
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">Tickets Recientes</span>
+    <a href="{{ url_for('tickets_list') }}" class="card-link">
+      Ver todos <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+  {% if recent_tickets %}
+  <table class="tickets-table">
+    <thead>
+      <tr>
+        <th>#ID</th>
+        <th>Asunto</th>
+        {% if current_user.role == 'superadmin' %}<th>Grupo</th>{% endif %}
+        <th>Prioridad</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ticket in recent_tickets %}
+      <tr onclick="location.href='{{ url_for('ticket_detail', ticket_id=ticket.id) }}'">
+        <td><span class="ticket-id">TKT-{{ '%03d' % ticket.id }}</span></td>
+        <td class="ticket-title-cell">{{ ticket.title }}</td>
+        {% if current_user.role == 'superadmin' %}
+        <td><span class="badge badge-group">{{ ticket.group.name }}</span></td>
+        {% endif %}
+        <td><span class="badge badge-{{ ticket.priority }}">{{ ticket.priority | title }}</span></td>
+        <td>
+          {% set labels = {'open':'Pendiente','in_progress':'En Progreso','resolved':'Resuelto','closed':'Cerrado'} %}
+          <span class="badge badge-{{ ticket.status }}">{{ labels.get(ticket.status, ticket.status) }}</span>
+        </td>
+        <td class="text-sm text-muted">{{ ticket.created_at.strftime('%d %b %Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+    <p>No hay tickets aún.</p>
+    <a href="{{ url_for('ticket_create') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> Crear ticket
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

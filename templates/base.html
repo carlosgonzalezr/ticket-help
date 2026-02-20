@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Ticket Help{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">TD</div>
+    <span class="logo-text">Ticket-Help</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2 nav-icon"></i> Dashboard
+    </a>
+    <a href="{{ url_for('tickets_list') }}" class="nav-item {% if request.endpoint in ['tickets_list','ticket_detail'] %}active{% endif %}">
+      <i class="bi bi-ticket-perforated nav-icon"></i> Mis Tickets
+      {% set open_count = current_user.tickets_created.filter_by(status='open').count() if current_user.role == 'solicitante' else '' %}
+      {% if open_count %}<span class="nav-badge">{{ open_count }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('ticket_create') }}" class="nav-item {% if request.endpoint == 'ticket_create' %}active{% endif %}">
+      <i class="bi bi-plus-circle nav-icon"></i> Nuevo Ticket
+    </a>
+    {% if current_user.role in ['superadmin','admin','resolutor'] %}
+    <a href="{{ url_for('reports') }}" class="nav-item {% if request.endpoint == 'reports' %}active{% endif %}">
+      <i class="bi bi-bar-chart nav-icon"></i> Reportes
+    </a>
+    {% endif %}
+    {% if current_user.role in ['superadmin','admin'] %}
+    <a href="{{ url_for('admin_users') }}" class="nav-item {% if request.endpoint == 'admin_users' %}active{% endif %}">
+      <i class="bi bi-people nav-icon"></i> Usuarios
+    </a>
+    {% endif %}
+    {% if current_user.role == 'superadmin' %}
+    <a href="{{ url_for('admin_groups') }}" class="nav-item {% if request.endpoint == 'admin_groups' %}active{% endif %}">
+      <i class="bi bi-diagram-3 nav-icon"></i> Grupos
+    </a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="user-avatar">{{ current_user.name[:2].upper() }}</div>
+    <div class="user-info">
+      <div class="user-name">{{ current_user.name }}</div>
+      <div class="user-role">{{ current_user.group.name if current_user.group else current_user.role | title }}</div>
+    </div>
+    <a href="{{ url_for('logout') }}" class="user-logout" title="Cerrar sesión">
+      <i class="bi bi-box-arrow-right"></i>
+    </a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-wrapper">
+  <header class="topbar">
+    <span class="topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
+    <div class="topbar-actions">
+      <div class="topbar-icon-btn" title="Notificaciones"><i class="bi bi-bell"></i></div>
+      <div class="topbar-icon-btn" title="Configuración"><i class="bi bi-gear"></i></div>
+    </div>
+  </header>
+
+  <!-- Flash messages -->
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash-msg {{ category }}">
+          <i class="bi bi-{% if category=='success' %}check-circle{% elif category=='danger' %}x-circle{% elif category=='warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+          {{ message }}
+          <span class="flash-close" onclick="this.parentElement.remove()">×</span>
+        </div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  <main class="page-content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

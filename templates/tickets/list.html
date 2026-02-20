@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Tickets — Ticket Help{% endblock %}
+{% block page_title %}Mis Tickets{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-3">
+  <div class="page-header" style="margin-bottom:0">
+    <h1 class="page-title">
+      Tickets
+      {% if current_user.group %}
+        <span class="badge badge-group" style="font-size:13px;vertical-align:middle;margin-left:8px">{{ current_user.group.name }}</span>
+      {% elif current_user.role == 'superadmin' %}
+        <span class="badge badge-role" style="font-size:13px;vertical-align:middle;margin-left:8px">Todos los grupos</span>
+      {% endif %}
+    </h1>
+  </div>
+  <a href="{{ url_for('ticket_create') }}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg"></i> Nuevo Ticket
+  </a>
+</div>
+
+<!-- Filtros -->
+<div class="filters-bar">
+  <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap">
+    <select name="status" class="form-select" onchange="this.form.submit()">
+      <option value="">Todos los estados</option>
+      <option value="open"        {% if current_status=='open' %}selected{% endif %}>Pendiente</option>
+      <option value="in_progress" {% if current_status=='in_progress' %}selected{% endif %}>En Progreso</option>
+      <option value="resolved"    {% if current_status=='resolved' %}selected{% endif %}>Resuelto</option>
+      <option value="closed"      {% if current_status=='closed' %}selected{% endif %}>Cerrado</option>
+    </select>
+    <select name="priority" class="form-select" onchange="this.form.submit()">
+      <option value="">Todas las prioridades</option>
+      <option value="low"    {% if current_priority=='low' %}selected{% endif %}>Baja</option>
+      <option value="medium" {% if current_priority=='medium' %}selected{% endif %}>Media</option>
+      <option value="high"   {% if current_priority=='high' %}selected{% endif %}>Alta</option>
+      <option value="urgent" {% if current_priority=='urgent' %}selected{% endif %}>Urgente</option>
+    </select>
+  </form>
+</div>
+
+<!-- Tabla -->
+<div class="card">
+  {% if tickets %}
+  <table class="tickets-table">
+    <thead>
+      <tr>
+        <th>#ID</th>
+        <th>Asunto</th>
+        {% if current_user.role == 'superadmin' %}<th>Grupo</th>{% endif %}
+        <th>Prioridad</th>
+        <th>Estado</th>
+        <th>Asignado</th>
+        <th>Origen</th>
+        <th>Fecha</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ticket in tickets %}
+      {% set labels = {'open':'Pendiente','in_progress':'En Progreso','resolved':'Resuelto','closed':'Cerrado'} %}
+      <tr onclick="location.href='{{ url_for('ticket_detail', ticket_id=ticket.id) }}'">
+        <td><span class="ticket-id">TKT-{{ '%03d' % ticket.id }}</span></td>
+        <td class="ticket-title-cell">{{ ticket.title }}</td>
+        {% if current_user.role == 'superadmin' %}
+        <td><span class="badge badge-group">{{ ticket.group.name }}</span></td>
+        {% endif %}
+        <td><span class="badge badge-{{ ticket.priority }}">{{ ticket.priority | title }}</span></td>
+        <td><span class="badge badge-{{ ticket.status }}">{{ labels.get(ticket.status, ticket.status) }}</span></td>
+        <td class="text-sm text-muted">{{ ticket.assignee.name if ticket.assignee else '—' }}</td>
+        <td>
+          {% if ticket.source == 'email' %}
+            <span class="badge badge-group"><i class="bi bi-envelope"></i></span>
+          {% else %}
+            <span style="color:var(--text-muted);font-size:13px"><i class="bi bi-globe"></i></span>
+          {% endif %}
+        </td>
+        <td class="text-sm text-muted">{{ ticket.created_at.strftime('%d %b %Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+    <p>No se encontraron tickets con esos filtros.</p>
+    <a href="{{ url_for('ticket_create') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg"></i> Crear ticket
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

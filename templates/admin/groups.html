@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Grupos — Ticket Help{% endblock %}
+{% block page_title %}Grupos{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Grupos del Sistema</h1>
+  <p class="page-subtitle">Cada grupo tiene su propio buzón de tickets.</p>
+</div>
+
+<div class="card">
+  <table class="tickets-table">
+    <thead>
+      <tr><th>#</th><th>Nombre</th><th>Descripción</th><th>Correo de entrada</th><th>Usuarios</th><th>Tickets</th></tr>
+    </thead>
+    <tbody>
+      {% for group in groups %}
+      <tr>
+        <td class="text-sm text-muted">{{ group.id }}</td>
+        <td style="font-weight:600;color:var(--text-primary)">{{ group.name }}</td>
+        <td class="text-sm text-muted">{{ group.description or '—' }}</td>
+        <td>
+          {% if group.email %}
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-cyan)">{{ group.email }}</span>
+          {% else %}<span class="text-muted text-sm">—</span>{% endif %}
+        </td>
+        <td><span class="badge badge-role">{{ group.users.count() }}</span></td>
+        <td><span class="badge badge-open">{{ group.tickets.count() }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ticket_db
+    restart: always
+    environment:
+      POSTGRES_USER: ticketuser
+      POSTGRES_PASSWORD: ticketpass
+      POSTGRES_DB: ticketdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ticketuser -d ticketdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: ticket_app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FLASK_ENV: development
+      FLASK_APP: app.py
+      DATABASE_URL: postgresql://ticketuser:ticketpass@db:5432/ticketdb
+      SECRET_KEY: cambiar_en_produccion
+      # SMTP (usar Gmail App Password u otro proveedor gratuito)
+      MAIL_SERVER: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_USERNAME: correo@ejemplo.com
+      MAIL_PASSWORD: cambiar_antes_de_usar
+      MAIL_USE_TLS: "true"
+      # IMAP para mail_checker.py
+      IMAP_SERVER: imap.gmail.com
+      IMAP_PORT: 993
+      # Mapeo correo → grupo (separar múltiples con coma)
+      # formato: correo:nombre_grupo
+      MAIL_GROUP_MAP: "ti@prueba.com:TI,rrhh@prueba.com:RRHH,callcenter@prueba.com:Call Center"
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    command: flask run --host=0.0.0.0 --port=5000
+
+volumes:
+  postgres_data:
